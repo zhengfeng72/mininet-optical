@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 
 """
-unilinear2.py: unidirectional linear network with
-               2-degree ROADMs and split Terminal uplink/downlink.
+unilinear1.py: unidirectional linear network with
+               1-degree ROADMs and split Terminal uplink/downlink.
 
-This is somewhat simpler than unilinear1.py because
-the middle ROADMs are 2-degree (though the endpoint ROADMs
-are still 1-degre.)
+This may be more complicated than what we
+actually want. We are using the base unidirectional
+ROADMs without any interconnection between them,
+in order to avoid the looping bug in the simulator.
+
+This does have the nice feature of minimizing ports at
+the expense of cabling complexity.
+
+An alternate design, simpler in some ways, is to
+interconnect the ROADMs vertically to create real
+2-degree, bi-directional ROADMs.
 """
 
 from mnoptical.dataplane import ( OpticalLink,
@@ -23,32 +31,11 @@ from mnoptical.examples.singleroadm import plotNet
 from mininet.topo import Topo
 from mininet.link import Link
 from mininet.node import OVSBridge
+
 from mininet.log import setLogLevel, info
 from mininet.clean import cleanup
 
-from mnoptical.node import Amplifier
-
 from sys import argv
-
-def add_amp(node_name=None, type=None,
-    gain_dB=None, monitor_mode='out'):
-    """
-    Create an Amplifier object to add to a ROADM node
-    :param node_name: string
-    :param type: string ('boost' or 'preamp'
-    :param gain_dB: int or float
-    """
-    label = '%s-%s' % (node_name, type)
-    if type == 'preamp':
-        return Amplifier(name=label,
-                         target_gain=float(gain_dB),
-                         preamp=True,
-                         monitor_mode=monitor_mode)
-    else:
-        return Amplifier(name=label,
-                         target_gain=float(gain_dB),
-                         boost=True,
-                         monitor_mode=monitor_mode)
 
 
 class OpticalTopo( Topo ):
@@ -73,23 +60,18 @@ class OpticalTopo( Topo ):
         kwargs.setdefault( 'cls', ROADM )
         return self.addSwitch( *args, **kwargs )
 
-class UniLinearTopo2( OpticalTopo ):
-    """A linear network connected by a string of
-       2-degree unidirectional ROADMs."""
+
+
+class UniLinearTopo( OpticalTopo ):
+    """A linear network connected by two strings of
+       unidirectional ROADMs in opposite directions."""
 
     # ROADM port numbering
-    # Eastbound route and Westbound route line ports
-    # (Note port 0 seems to conflict with lo0/management port!)
-    eastin = 1
-    eastout = 2
-    westin = 3
-    westout = 4
-    # Select line in and out from i to j
-    def linein(self, i, j): return self.eastin if i<j else self.westin
-    def lineout(self, i, j): return self.eastout if i<j else self.westout
-    # Local add and drop ports
-    def addport(self, dst): return 4+dst
-    def dropport(self, src): return 4+self.nodecount+src
+    # Note port 0 seems to conflict with lo0/management port
+    linein  = 1
+    lineout = 2
+    def addport(self, dst): return 2+dst
+    def dropport(self, src): return 2+self.nodecount+src
 
     # Terminal port numbering (switch uses same ethport)
     def ethport(self, dst): return dst
@@ -107,55 +89,51 @@ class UniLinearTopo2( OpticalTopo ):
         transceivers = tuple((f'tx{ch}', power, 'C')
                              for ch in range(1, 2*nodecount+1))
         topts = {'transceivers': transceivers, 'monitor_mode': 'in'}
-        ropts = {}  # was: {'wss_dict': {ch:(7.0,None) for ch in range(1,91)}}
-
-
-        # roadm_boost = add_amp(node_name='roadm-boost', type='EDFA',gain_dB=17)
-
+        ropts = {} # was: { 'wss_dict': {ch:(7.0,None) for ch in range(1,91)}}
         for i in range(1, nodecount+1):
             self.addHost(f'h{i}')
             self.addSwitch(f's{i}')
             self.addTerminal(f't{i}', **topts)
-            # self.addROADM(f'r{i}', **ropts, insertion_loss_dB=17, boost=roadm_boost)
-            self.addROADM(f'r{i}', **ropts, insertion_loss_dB=17)
+            self.addROADM(f're{i}', **ropts)
+            self.addROADM(f'rw{i}', **ropts)
 
         # WAN Optical link parameters
         boost = ('boost', {'target_gain':17*dB},)
-        #boost = ('boost', {'target_gain':0},)
         aparams = {'target_gain': 50*km*.22, 'monitor_mode':'out'}
         spans = [50*km, ('amp1', aparams), 50*km, ('amp2', aparams)]
 
-        # Aliases for convenience
-        eastin, eastout = self.eastin, self.eastout
-        westin, westout = self.westin, self.westout
+        # Port number helper function aliases
+        linein, lineout = self.linein, self.lineout
         addport, dropport = self.addport, self.dropport
         uplink, downlink = self.uplink, self.downlink
 
         # Add links for each node/POP
         for node in range(1, nodecount+1):
-            # Eastbound and westbound roadm->roadm links
+            # Unidirectional roadm->roadm optical links
             lopts = dict(boost=boost, spans=spans)
             if node < nodecount:
-                self.wdmLink(f'r{node}', f'r{node+1}', **lopts,
-                             port1=eastout, port2=eastin)
+                self.wdmLink(f're{node}', f're{node+1}', **lopts,
+                             port1=lineout, port2=linein)
             if node > 1:
-                self.wdmLink(f'r{node}', f'r{node-1}', **lopts,
-                             port1=westout, port2=westin)
+                self.wdmLink(f'rw{node}', f'rw{node-1}', **lopts,
+                             port1=lineout, port2=linein)
             # Uplinks/downlinks to/from destination nodes
             for dest in range(1, nodecount+1):
                 # One switch<->terminal link per dest node
                 port1 = port2 = self.ethport(dest)
                 if dest == node:
                     # Host link for local traffic
-                    self.ethLink(f'h{node}', f's{node}', port2=port2)
+                    self.ethLink(f's{node}', f'h{node}', port1=port1)
                     continue
                 # Terminal link for remote traffic
                 self.ethLink(
                     f's{node}', f't{node}', port1=port1, port2=port2)
-                # Terminal uplink and downlink to/from roadm
-                self.wdmLink(f't{node}', f'r{node}', spans=[1*m],
+                # Inbound and outbound roadm<->terminal links
+                outbound = f're{node}' if dest>node else f'rw{node}'
+                inbound = f'rw{node}' if dest>node else f're{node}'
+                self.wdmLink(f't{node}', outbound, spans=[1*m],
                              port1=uplink(dest), port2=addport(dest))
-                self.wdmLink(f'r{node}', f't{node}', spans=[1*m],
+                self.wdmLink(inbound, f't{node}', spans=[1*m],
                              port1=dropport(dest), port2=downlink(dest))
 
 # Configuration
@@ -174,8 +152,6 @@ def config(net, mesh=False, root=1):
 
     # Helper functions
     topo, nodecount = net.topo, net.topo.nodecount
-    eastin, eastout = topo.eastin, topo.eastout
-    westin, westout = topo.westin, topo.westout
     linein, lineout = topo.linein, topo.lineout
     addport, dropport = topo.addport, topo.dropport
     uplink, downlink, ethport = topo.uplink, topo.downlink, topo.ethport
@@ -183,7 +159,7 @@ def config(net, mesh=False, root=1):
     # Allocate Channels:
     # Each distinct (src, dst) pair gets its own channel,
     # which eliminates lightpath routing conflicts.
-    channels, pairs = {}, {}
+    channels = {}
     ch = 1
     for src in range(1, nodecount+1):
         for dst in range(1, nodecount+1):
@@ -192,45 +168,45 @@ def config(net, mesh=False, root=1):
             # We ignore loopback for now
             if src == dst: continue
             channels[src, dst] = ch
-            pairs[ch] = (src, dst)
             ch += 1
     print("Channel assignment:")
-    print('\n'.join(f"ch{ch}: r{pair[0]} -> r{pair[1]}"
-                    for ch, pair in pairs.items()))
+    print(channels)
+
+    # Set of all channels for calculating pass channels
+    chset = set(channels.values())
 
     for i in range(1, nodecount+1):  # local node
-        # Pass all channels that are not added or dropped
-        passchannels = set(channels.values())
-        roadm = net[f'r{i}']
         for j in range(1, nodecount+1):  # remote node
-            # Skip loopback connections
             if i == j: continue
-            # Star topology only connects to/from root
-            if not mesh and root not in (i, j): continue
-            # Add and drop channels for i->j, j->i
+            # Star topology is rooted at root
+            if not mesh and i != root and j != root:
+                continue
+            # Configure ROADMS with add/drop/pass channels
+            outbound = net[f're{i}'] if j>i else net[f'rw{i}']
+            inbound = net[f'rw{i}'] if j>i else net[f're{i}']
+            # Channels that are not added/dropped are passed/forwarded
             addch, dropch = channels[i,j], channels[j,i]
-            print(roadm, f'add  ch{addch} port {addport(j)} -> {j}')
-            roadm.connect(addport(j), lineout(i,j), [addch])
-            print(roadm, f'drop ch{dropch} port {dropport(j)} <- {j}')
-            roadm.connect(linein(j,i), dropport(j), [dropch])
-            # Don't pass add/drop channels
-            passchannels.remove(addch)
-            passchannels.remove(dropch)
+            print(f'{outbound} add  ch{addch} port {addport(j)}')
+            outbound.connect(addport(j), lineout, [addch])
+            print(f'{inbound} drop ch{dropch} port {dropport(j)}')
+            inbound.connect(linein, dropport(j), [dropch])
+            if 1 < i < nodecount:
+                passchannels = chset - {addch, dropch}
+                print(inbound, 'pass', passchannels)
+                inbound.connect(linein, lineout, passchannels)
+                print(outbound, 'pass', passchannels)
+                outbound.connect(linein, lineout, passchannels)
             # Configure terminal uplinks and downlinks
             terminal = net[f't{i}']
             terminal.connect(
                 ethPort=ethport(j), wdmPort=uplink(j), channel=addch)
             terminal.connect(
                 wdmPort=downlink(j), ethPort=ethport(j), channel=dropch)
-        # Pass all channels that were not added or dropped
-        if 1 < i < nodecount:
-            print(roadm, 'pass', passchannels)
-            roadm.connect(eastin, eastout, passchannels)
-            roadm.connect(westin, westout, passchannels)
 
     # Turn on terminals
     for i in range(1, nodecount+1):
         net[f't{i}'].turn_on()
+
 
 class CLI( OpticalCLI ):
     "CLI with config command"
@@ -243,19 +219,18 @@ def test(net):
     config(net)
     assert net.pingAll() == 0   # 0% loss
 
-
 if __name__ == '__main__':
 
     cleanup()  # Just in case!
     setLogLevel('info')
     if len(argv) == 2 and argv[1] == 'clean': exit(0)
 
-    topo = UniLinearTopo2(nodecount=2)
+    topo = UniLinearTopo(nodecount=4)
     net = Mininet(topo=topo, switch=OVSBridge, controller=None)
     # restServer = RestServer(net)
     net.start()
     # restServer.start()
-    plotNet(net, outfile='unilinear2.png', directed=True,
+    plotNet(net, outfile='unilinear1.png', directed=True,
             layout='neato')
     info( '*** Use config command to configure network \n' )
     if 'test' in argv:
