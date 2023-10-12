@@ -222,6 +222,9 @@ class Monitor:
     def __str__( self ):
         return str( self.model)
 
+    def getber( self, ber_method):
+        return self.model.get_ber(ber_method)
+
 
 def PhySpan( length, amp=None ):
     "Return a usable span of length km with amplifer amp"
@@ -456,6 +459,12 @@ class Terminal( SwitchBase ):
                           'dl_vlan=%d,' % channel +
                           'cookie=%d/-1' % self.blockCookie )
         self.dpctl( 'del-flows', blockInbound )
+
+    def setModulationForamt( self, qam):
+        transceivers = self.model.transceivers
+
+        for transceiver in transceivers:
+            self.model.set_modulation_format(transceiver, qam+"QAM")
 
 
 class ROADM( SwitchBase ):

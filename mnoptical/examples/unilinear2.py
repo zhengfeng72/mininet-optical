@@ -114,7 +114,7 @@ class UniLinearTopo2( OpticalTopo ):
 
         for i in range(1, nodecount+1):
             self.addHost(f'h{i}')
-            self.addSwitch(f's{i}')
+            # self.addSwitch(f's{i}')
             self.addTerminal(f't{i}', **topts)
             # self.addROADM(f'r{i}', **ropts, insertion_loss_dB=17, boost=roadm_boost)
             self.addROADM(f'r{i}', **ropts, insertion_loss_dB=17)
@@ -147,16 +147,42 @@ class UniLinearTopo2( OpticalTopo ):
                 port1 = port2 = self.ethport(dest)
                 if dest == node:
                     # Host link for local traffic
-                    self.ethLink(f'h{node}', f's{node}', port2=port2)
+                    self.ethLink(f'h{node}', f't{node}', port2=port2)
                     continue
                 # Terminal link for remote traffic
-                self.ethLink(
-                    f's{node}', f't{node}', port1=port1, port2=port2)
+                # self.ethLink(
+                #     f's{node}', f't{node}', port1=port1, port2=port2)
                 # Terminal uplink and downlink to/from roadm
                 self.wdmLink(f't{node}', f'r{node}', spans=[1*m],
                              port1=uplink(dest), port2=addport(dest))
                 self.wdmLink(f'r{node}', f't{node}', spans=[1*m],
                              port1=dropport(dest), port2=downlink(dest))
+
+def getber(net):
+    for node in net:
+        if "monitor" in node:
+            print(node)
+            # if(command == "bpsk" or command == "qpsk" or command == "8psk" or command == "16psk"):
+            for command in ["bpsk", "qpsk", "8psk", "16psk"]:
+                print("\t",command ,": ", net[node].getber(command))
+            print()
+        # net["r2-r1-amp1-monitor"].getber(command)
+
+def setmod(net, command):
+    nodecount = net.topo.nodecount
+    
+    if(command != "16" and command != "64" and command != "256"):
+        print("[error] 16 or 64 or 256 to set correspond modulation")
+    else:
+        for i in range(1, nodecount+1):
+            terminal = net[f't{i}']
+            terminal.setModulationForamt(command)
+            # transceivers = terminal.transceivers
+            # terminal.set_modulation_format(transceiver, f"{command}QAM")
+
+            # print(transceivers)
+            # print("QAK: ", f"{command}QAM")
+    
 
 # Configuration
 
@@ -236,6 +262,10 @@ class CLI( OpticalCLI ):
     "CLI with config command"
     def do_config(self, _line):
         config(self.mn)
+    def do_setmod(self, _line):
+        setmod(self.mn, _line)
+    def do_getber(self, _line):
+        getber(self.mn)
 
 
 def test(net):
@@ -250,7 +280,20 @@ if __name__ == '__main__':
     setLogLevel('info')
     if len(argv) == 2 and argv[1] == 'clean': exit(0)
 
+    # if len(argv) < 3:
+    #     print("error input roadm insertion loss and amp target gain")
+    #     exit(0)
+
+    # input_insertion_loss = argv[1]
+    # input_target_gain = argv[2]
+
+    # print("input_insertion_loss:", input_insertion_loss)
+    # print("input_target_gain:", input_target_gain)
+
+    # topo = UniLinearTopo2(nodecount=2, insertion_loss=input_insertion_loss, target_gain=input_target_gain)
+
     topo = UniLinearTopo2(nodecount=2)
+
     net = Mininet(topo=topo, switch=OVSBridge, controller=None)
     # restServer = RestServer(net)
     net.start()

@@ -361,7 +361,7 @@ class LineTerminal(Node):
             link = self.port_to_link_out[out_port]
             link.include_optical_signal_in(optical_signal)
 
-            print("[terminal] turn on: power ",optical_signal.index, ", ", optical_signal.power , "dB")
+            # print("[terminal] turn on: power ",optical_signal.index, ", ", optical_signal.power , "dB")
             if signal_count == self.optical_signals_out:
                 link.propagate(is_last_port=True, safe_switch=safe_switch)
             else:
@@ -1047,12 +1047,12 @@ class Roadm(Node):
             # the carrier's attenuation in self.propagate()
             for in_port, optical_signals in in_port_signals.items():
                 if self.preamp:
-                    print(self.preamp.describe())
+                    # print(self.preamp.describe())
                     optical_signals_in_preamp = []
                     for optical_signal in optical_signals:
                         if self.preamp in optical_signal.loc_in_to_state:
                             optical_signals_in_preamp.append(optical_signal)
-                            print("[roadm] prepropagate: power ",optical_signal.index, ", ", optical_signal.power , "dB")
+                            # print("[roadm] prepropagate: power ",optical_signal.index, ", ", optical_signal.power , "dB")
 
                     # need to process signal before switch-based propagation
                     if optical_signals_in_preamp:
@@ -1079,16 +1079,16 @@ class Roadm(Node):
             total_power = power_in + ase_noise_in + nli_noise_in
             carriers_att[optical_signal.index] = abs_to_db(total_power * 1e3) - \
                                                  self.target_output_power_dBm[optical_signal.index]
-            print("power_in :", power_in, ", ase_noise_in :", ase_noise_in, ", nli_noise_in: ", nli_noise_in)
-            print("total_power:" , total_power)
-            print("self.target_output_power_dBm: ", self.target_output_power_dBm[optical_signal.index])
-            print("carriers_att", carriers_att[optical_signal.index])
+            # print("power_in :", power_in, ", ase_noise_in :", ase_noise_in, ", nli_noise_in: ", nli_noise_in)
+            # print("total_power:" , total_power)
+            # print("self.target_output_power_dBm: ", self.target_output_power_dBm[optical_signal.index])
+            # print("carriers_att", carriers_att[optical_signal.index])
 
         exceeding_att = -min(list(filter(lambda x: x < 0, carriers_att.values())), default=0)
-        print("exceeding_att: ", exceeding_att)
+        # print("exceeding_att: ", exceeding_att)
         for k, x in carriers_att.items():
             carriers_att[k] = db_to_abs(x + exceeding_att)
-        print(k ,"carriers_att[k]", carriers_att[k])
+        # print(k ,"carriers_att[k]", carriers_att[k])
         return carriers_att
 
     def process_att(self, out_port, in_port, optical_signals, src_node, dst_node, link, amp=None):
@@ -1107,23 +1107,23 @@ class Roadm(Node):
         carriers_att = self.compute_carrier_attenuation(in_port, amp=amp)
 
         for optical_signal in optical_signals:
-            print("[roadm 1] propagate before for loop: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            # print("[roadm 1] propagate before for loop: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
             if amp:
                 # attenuate signals at output interface of amp
                 power_out = optical_signal.loc_out_to_state[amp]['power'] / carriers_att[optical_signal.index]
                 ase_noise_out = optical_signal.loc_out_to_state[amp]['ase_noise'] / carriers_att[optical_signal.index]
                 nli_noise_out = optical_signal.loc_out_to_state[amp]['nli_noise'] / carriers_att[optical_signal.index]
-                print("[carriers_att]", carriers_att[optical_signal.index])
-                print("[roadm] pass amp %s, power: %edB, ase_noise: %edB, nli_noise: %e dB" % (optical_signal.index, optical_signal.loc_out_to_state[amp]['power'] , optical_signal.loc_out_to_state[amp]['ase_noise'], optical_signal.loc_out_to_state[amp]['nli_noise']))
+                # print("[carriers_att]", carriers_att[optical_signal.index])
+                # print("[roadm] pass amp %s, power: %edB, ase_noise: %edB, nli_noise: %e dB" % (optical_signal.index, optical_signal.loc_out_to_state[amp]['power'] , optical_signal.loc_out_to_state[amp]['ase_noise'], optical_signal.loc_out_to_state[amp]['nli_noise']))
 
             else:
                 # attenuate signals as they entered the ROADM (self)
                 power_out = optical_signal.loc_in_to_state[self]['power'] / carriers_att[optical_signal.index]
                 ase_noise_out = optical_signal.loc_in_to_state[self]['ase_noise'] / carriers_att[optical_signal.index]
                 nli_noise_out = optical_signal.loc_in_to_state[self]['nli_noise'] / carriers_att[optical_signal.index]
-                print("[carriers_att]", carriers_att[optical_signal.index])
-                print("[roadm] self %s, power: %edB, ase_noise: %edB, nli_noise: %e dB" % (optical_signal.index, optical_signal.loc_in_to_state[self]['power'] , optical_signal.loc_in_to_state[self]['ase_noise'], optical_signal.loc_in_to_state[self]['nli_noise']))
-                print("[roadm] self out %s, power: %edB, ase_noise: %edB, nli_noise: %e dB" % (optical_signal.index, power_out, ase_noise_out, nli_noise_out))
+                # print("[carriers_att]", carriers_att[optical_signal.index])
+                # print("[roadm] self %s, power: %edB, ase_noise: %edB, nli_noise: %e dB" % (optical_signal.index, optical_signal.loc_in_to_state[self]['power'] , optical_signal.loc_in_to_state[self]['ase_noise'], optical_signal.loc_in_to_state[self]['nli_noise']))
+                # print("[roadm] self out %s, power: %edB, ase_noise: %edB, nli_noise: %e dB" % (optical_signal.index, power_out, ase_noise_out, nli_noise_out))
 
             if self.boost:
                 # need to pass signals to boost for later processing
@@ -1138,19 +1138,19 @@ class Roadm(Node):
                 self.include_optical_signal_out(optical_signal, power=power_out,
                                                 ase_noise=ase_noise_out, nli_noise=nli_noise_out,
                                                 out_port=out_port)
-            print("[roadm 2] propagate after for loop: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            # print("[roadm 2] propagate after for loop: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
                             
 
         if self.boost:
             # process boost amp
-            for optical_signal in optical_signals:
-                print("[roadm 3] propagate before boost: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            # for optical_signal in optical_signals:
+            #     print("[roadm 3] propagate before boost: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
             self.boost.propagate(optical_signals)
 
-            for optical_signal in optical_signals:
-                print("[roadm 4] propagate after boost: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            # for optical_signal in optical_signals:
+            #     print("[roadm 4] propagate after boost: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
             # pass signals to link and update state at Roadm
             for i, optical_signal in enumerate(optical_signals):
@@ -1433,7 +1433,7 @@ class Amplifier(Node):
             # Compute ASE noise generation
             self.stage_amplified_spontaneous_emission_noise(optical_signal)
 
-            print("[amp 1] %s propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (self.name ,optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            # print("[amp 1] %s propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (self.name ,optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
         self.compute_power_excursions(optical_signals)
         # Once the system gain has been updated
@@ -1465,13 +1465,13 @@ class Amplifier(Node):
                         optical_signal, power=power_out,
                         ase_noise=ase_noise_out, nli_noise=nli_noise_out)
 
-                print("[amp 2] propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
-                print("[amp 2] check propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, power_out , ase_noise_out, nli_noise_out,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+                # print("[amp 2] propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+                # print("[amp 2] check propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, power_out , ase_noise_out, nli_noise_out,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
 
         # Trigger the action for the next component
         if component:
-            print("amp next component", component.__class__.__name__)
+            # print("amp next component", component.__class__.__name__)
             if hasattr(component, 'switch'):
                 component.switch(in_port, self.link.src_node, safe_switch=safe_switch)
             elif hasattr(component, 'propagate'):
@@ -1536,7 +1536,7 @@ class Attenuator(Amplifier):
         """
 
         for optical_signal in optical_signals:
-            print("[att 1] propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            # print("[att 1] propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
             self.attenuation(optical_signal)
 
@@ -1567,7 +1567,7 @@ class Attenuator(Amplifier):
                         optical_signal, power=power_out,
                         ase_noise=ase_noise_out, nli_noise=nli_noise_out)
 
-                print("[att 2] propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+                # print("[att 2] propagate: %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
 
 
         # Trigger the action for the next component if needed
@@ -1688,15 +1688,17 @@ class Monitor(Node):
         doi: 10.1109/JLT.1012.2.2189198
         """
         gosnr = self.get_list_gosnr()
+        # print(gosnr)
+        # print(gosnr[0][1])
         ber = ber_method
         if ber_method == 'bpsk':
-            ber = 0.5 * erfc(sqrt(gosnr[0]))
+            ber = 0.5 * erfc(sqrt(gosnr[0][1]))
         if ber_method == 'qpsk':
-            ber = 0.5 * erfc(sqrt(gosnr[0] / 2))
+            ber = 0.5 * erfc(sqrt(gosnr[0][1] / 2))
         if ber_method == '8psk':
-            ber = (2 / 3) * erfc(sqrt((3 / 14) * gosnr[0]))
+            ber = (2 / 3) * erfc(sqrt((3 / 14) * gosnr[0][1]))
         if ber_method == '16psk':
-            ber = (3 / 8) * erfc(sqrt(gosnr[0]) / 10)
+            ber = (3 / 8) * erfc(sqrt(gosnr[0][1]) / 10)
         return ber
 
     def get_dict_power(self):
