@@ -120,9 +120,10 @@ class UniLinearTopo2( OpticalTopo ):
             self.addROADM(f'r{i}', **ropts, insertion_loss_dB=17)
 
         # WAN Optical link parameters
-        boost = ('boost', {'target_gain':17*dB},)
-        aparams = {'target_gain': 50*km*.34, 'monitor_mode':'out'}
-        spans = [50*km, ('amp1', aparams), 50*km, ('amp2', aparams)]
+        boost = ('boost', {'target_gain':0*dB},)
+        #boost = ('boost', {'target_gain':0},)
+        aparams = {'target_gain': 50*km*0, 'monitor_mode':'out'}
+        spans = [140*km, ('amp1', aparams)]
 
         # Aliases for convenience
         eastin, eastout = self.eastin, self.eastout

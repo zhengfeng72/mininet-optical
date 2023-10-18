@@ -500,8 +500,7 @@ class Transceiver(object):
 
 class OpticalSignal(object):
     spectrum_band_init_nm = 1567.132556194459
-    spectrum_band_init_H = 196.4e12
-    #spectrum_band_init_H = 191.3e12
+    spectrum_band_init_H = 191.3e12
     
 
     def __init__(self, index, channel_spacing_H,

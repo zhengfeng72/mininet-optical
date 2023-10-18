@@ -34,6 +34,7 @@ mnoptical/examples/sixnodestopo.py
 mnoptical/examples/test-attenuator.py
 mnoptical/examples/unilinear1.py
 mnoptical/examples/unilinear2.py
+mnoptical/examples/unilinear2_noboostamp.py
 mnoptical/examples/uniring.py
 mnoptical/examples/uniroadmchain.py
 mnoptical/ofcdemo/Control_Test_Lum.py
