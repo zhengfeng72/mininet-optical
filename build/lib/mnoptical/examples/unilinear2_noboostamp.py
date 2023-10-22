@@ -123,7 +123,7 @@ class UniLinearTopo2( OpticalTopo ):
         boost = ('boost', {'target_gain':0*dB},)
         #boost = ('boost', {'target_gain':0},)
         aparams = {'target_gain': 50*km*0, 'monitor_mode':'out'}
-        spans = [140*km, ('amp1', aparams)]
+        spans = [50*km, ('amp1', aparams)]
 
         # Aliases for convenience
         eastin, eastout = self.eastin, self.eastout

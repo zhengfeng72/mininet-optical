@@ -122,8 +122,8 @@ class UniLinearTopo2( OpticalTopo ):
         # WAN Optical link parameters
         boost = ('boost', {'target_gain':0*dB},)
         #boost = ('boost', {'target_gain':0},)
-        aparams = {'target_gain': 50*km*0, 'monitor_mode':'out'}
-        spans = [100*km, ('amp1', aparams)]
+        #aparams = {'target_gain': 50*km*0, 'monitor_mode':'out'}
+        spans =[400*km]
 
         # Aliases for convenience
         eastin, eastout = self.eastin, self.eastout
@@ -134,7 +134,7 @@ class UniLinearTopo2( OpticalTopo ):
         # Add links for each node/POP
         for node in range(1, nodecount+1):
             # Eastbound and westbound roadm->roadm links
-            lopts = dict(boost=boost, spans=spans)
+            lopts = dict(spans=spans)
             if node < nodecount:
                 self.wdmLink(f'r{node}', f'r{node+1}', **lopts,
                              port1=eastout, port2=eastin)

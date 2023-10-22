@@ -121,7 +121,6 @@ class UniLinearTopo2( OpticalTopo ):
 
         # WAN Optical link parameters
         boost = ('boost', {'target_gain':17*dB},)
-        #boost = ('boost', {'target_gain':0},)
         aparams = {'target_gain': 50*km*.34, 'monitor_mode':'out'}
         spans = [50*km, ('amp1', aparams), 50*km, ('amp2', aparams)]
 

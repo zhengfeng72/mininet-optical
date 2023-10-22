@@ -489,7 +489,7 @@ class Span(object):
         # XXX The GN model seems to want our outputs to be preloaded       
        
         for optical_signal in self.optical_signals: 
-            # print("[span 1] propagate before att:index %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            print("[span 1] propagate before att:index %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
  
             state = optical_signal.loc_in_to_state[self]
             power, ase_noise, nli_noise = state['power'], state['ase_noise'], state['nli_noise']
@@ -509,18 +509,18 @@ class Span(object):
                 state = optical_signal.loc_out_to_state[self]
                 power, ase_noise, nli_noise = state['power'], state['ase_noise'], state['nli_noise']
                 attenuation = self.attenuation(optical_signal.index)
-                # print("attenuation", attenuation)
+                print("attenuation", attenuation)
                 self.include_optical_signal_out(
                     optical_signal,
                     power=power/attenuation,
                     ase_noise=ase_noise/attenuation,
                     nli_noise=nli_noise/attenuation)
-                # print("[span] prev_component != LineTerminal:index %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e \n" % (optical_signal.index, power/attenuation , ase_noise/attenuation, nli_noise/attenuation,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+                print("[span] prev_component != LineTerminal:index %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e \n" % (optical_signal.index, power/attenuation , ase_noise/attenuation, nli_noise/attenuation,optical_signal.get_osnr(), optical_signal.get_gosnr()))
  
 
         component = self.next_component
         in_port = component.link_to_port_in[self.link] if hasattr(component, 'link_to_port_in') else 0
-        # print("[span]", component.__class__.__name__ ,"if hasattr(next component, 'link_to_port_in')", in_port)
+        print("[span]", component.__class__.__name__ ,"if hasattr(next component, 'link_to_port_in')", in_port)
 
         for optical_signal in self.optical_signals:
             state = optical_signal.loc_out_to_state[self]
@@ -531,7 +531,7 @@ class Span(object):
             if hasattr(component, 'receiver'):
                 component.receiver(optical_signal, in_port)
             
-            # print("[span 2] propagate after att:index %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
+            print("[span 2] propagate after att:index %s, power: %edB, ase_noise: %edB, nli_noise: %e dB, osnr: %e, gosnr: %e" % (optical_signal.index, optical_signal.power , optical_signal.ase_noise, optical_signal.nli_noise,optical_signal.get_osnr(), optical_signal.get_gosnr()))
  
 
         if hasattr(component, 'switch'):
@@ -553,7 +553,7 @@ class Span(object):
             nli_noise_in = optical_signal.loc_in_to_state[self]['nli_noise']
             nli_noise_out = nli_noise_in + nonlinear_noise[optical_signal]
             self.include_optical_signal_out(optical_signal, nli_noise=nli_noise_out)
-            # print("[gn model] nli_noise_in ", nli_noise_in, ",nli_noise_out ", nli_noise_out)
+            print("[gn model] nli_noise_in ", nli_noise_in, ",nli_noise_out ", nli_noise_out)
 
     def gn_model(self):
         """ Computes the nonlinear interference power on a single carrier.
